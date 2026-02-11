@@ -143,7 +143,7 @@ export default function ProfilePage() {
             </label>
           </div>
 
-          <div>
+          {/* <div>
             <label>
               Preferences (JSON format)
               <textarea
@@ -156,7 +156,7 @@ export default function ProfilePage() {
                 Enter preferences as JSON. Example: {'{"notifications": true, "preferredTime": "morning"}'}
               </small>
             </label>
-          </div>
+          </div> */}
 
           <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
 
@@ -203,7 +203,7 @@ export default function ProfilePage() {
       {user && (
         <div className="card" style={{ marginTop: '1.5rem' }}>
           <h3>Account Information</h3>
-          <p><strong>Role:</strong> {user.role}</p>
+          {/* <p><strong>Role:</strong> {user.role}</p> */}
           <p><strong>Member since:</strong> {new Date(user.createdAt).toLocaleDateString()}</p>
         </div>
       )}
