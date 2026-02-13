@@ -196,11 +196,11 @@ export default function BookingPage() {
               ) : availableSlots.length === 0 ? (
                 <div>
                   <p style={{ color: '#ef4444', marginBottom: '0.5rem' }}>
-                    {error || 'No available slots for this date. Please select a different date or staff member.'}
+                    {/* {error || 'No available slots for this date. Please select a different date or staff member.'} */}
                   </p>
-                  <p style={{ fontSize: '0.875rem', color: '#666' }}>
+                  {/* <p style={{ fontSize: '0.875rem', color: '#666' }}>
                     💡 Tip: Make sure staff availability is set for this day. Admin can set availability in Admin → Staff → Manage Availability.
-                  </p>
+                  </p> */}
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>

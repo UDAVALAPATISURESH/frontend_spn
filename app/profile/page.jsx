@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { authApi } from '../../lib/api';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../lib/auth';
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { isLoading: authLoading } = useAuth(); // Require any authenticated user
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState(null);
@@ -20,8 +22,19 @@ export default function ProfilePage() {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (!authLoading) {
+      loadProfile();
+    }
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   const loadProfile = async () => {
     try {

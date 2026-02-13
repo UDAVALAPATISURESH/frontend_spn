@@ -3,46 +3,40 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authApi } from "../../../lib/api";
+import { useAuth } from "../../../lib/auth";
 
 function PaymentSuccessInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { isLoading: authLoading } = useAuth(); // Require any authenticated user
   const [appointmentId, setAppointmentId] = useState(null);
   const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
-    const id = searchParams.get("appointmentId");
-    const orderId = searchParams.get("order_id");
-    const paymentIntentId = searchParams.get("payment_intent");
-    const razorpayPaymentId = searchParams.get("razorpay_payment_id");
-    const razorpayOrderId = searchParams.get("razorpay_order_id");
-    const razorpaySignature = searchParams.get("razorpay_signature");
+    if (!authLoading) {
+      const id = searchParams.get("appointmentId");
+      const orderId = searchParams.get("order_id");
+      const paymentIntentId = searchParams.get("payment_intent");
 
-    const appointmentIdFromUrl = id || searchParams.get("appointmentId");
+      const appointmentIdFromUrl = id || searchParams.get("appointmentId");
 
-    if (appointmentIdFromUrl) {
-      setAppointmentId(appointmentIdFromUrl);
+      if (appointmentIdFromUrl) {
+        setAppointmentId(appointmentIdFromUrl);
 
-      if (paymentIntentId) {
-        verifyStripePayment(appointmentIdFromUrl, paymentIntentId);
+        if (paymentIntentId) {
+          verifyStripePayment(appointmentIdFromUrl, paymentIntentId);
+        } else if (orderId) {
+          verifyCashfreePayment(appointmentIdFromUrl, orderId);
+        } else {
+          setVerifying(false);
+        }
       } else if (orderId) {
-        verifyCashfreePayment(appointmentIdFromUrl, orderId);
-      } else if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
-        verifyRazorpayPayment(
-          appointmentIdFromUrl,
-          razorpayOrderId,
-          razorpayPaymentId,
-          razorpaySignature
-        );
-      } else {
         setVerifying(false);
+      } else {
+        router.push("/dashboard");
       }
-    } else if (orderId) {
-      setVerifying(false);
-    } else {
-      router.push("/dashboard");
     }
-  }, []);
+  }, [authLoading]);
 
   const verifyStripePayment = async (apptId, paymentIntentId) => {
     try {
@@ -86,34 +80,11 @@ function PaymentSuccessInner() {
     }
   };
 
-  const verifyRazorpayPayment = async (apptId, orderId, paymentId, signature) => {
-    try {
-      const appointmentsRes = await authApi().get("/appointments/my");
-      const appointment = appointmentsRes.data.find(
-        (a) => a.id === parseInt(apptId)
-      );
-
-      if (appointment && appointment.Payment) {
-        await authApi().post("/payments/verify", {
-          paymentId: appointment.Payment.id,
-          provider: "razorpay",
-          razorpayOrderId: orderId,
-          razorpayPaymentId: paymentId,
-          razorpaySignature: signature,
-        });
-      }
-    } catch (err) {
-      console.error("Payment verification error:", err);
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  if (verifying) {
+  if (authLoading || verifying) {
     return (
       <div style={{ maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "2rem" }}>
-        <h1>Verifying Payment...</h1>
-        <p>Please wait while we confirm your payment.</p>
+        <h1>{authLoading ? "Checking Authentication..." : "Verifying Payment..."}</h1>
+        <p>Please wait while we {authLoading ? "verify your access" : "confirm your payment"}.</p>
       </div>
     );
   }

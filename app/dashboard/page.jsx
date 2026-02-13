@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { authApi } from '../../lib/api';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../lib/auth';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { isLoading: authLoading } = useAuth(); // Require any authenticated user
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rescheduling, setRescheduling] = useState(null);
@@ -19,25 +21,47 @@ export default function DashboardPage() {
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
 
   useEffect(() => {
-    loadAppointments();
-  }, []);
+    if (!authLoading) {
+      loadAppointments();
+    }
+  }, [authLoading]);
 
   const loadAppointments = async () => {
     try {
       const res = await authApi().get('/appointments/my');
       setAppointments(res.data);
     } catch (err) {
-      console.error('Failed to load appointments:', err);
+      if (err.response?.status === 401) {
+        router.push('/login');
+      } else {
+        console.error('Failed to load appointments:', err);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
+
   const canRescheduleOrCancel = (appointment) => {
-    const appointmentTime = new Date(appointment.startTime);
-    const now = new Date();
-    const hoursUntilAppointment = (appointmentTime - now) / (1000 * 60 * 60);
-    return hoursUntilAppointment >= 24 && appointment.status === 'confirmed';
+    if (appointment.status !== 'confirmed') return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointmentDate = new Date(appointment.startTime);
+    appointmentDate.setHours(0, 0, 0, 0);
+
+    const diffDays = (appointmentDate - today) / (1000 * 60 * 60 * 24);
+
+    return diffDays >= 1;
   };
 
   const handleReschedule = async (appointmentId) => {

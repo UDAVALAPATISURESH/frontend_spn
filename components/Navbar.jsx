@@ -35,12 +35,21 @@ export default function Navbar() {
 
   const { isLoggedIn, role } = authState;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (typeof window === 'undefined') return;
-    window.localStorage.removeItem('token');
-    window.localStorage.removeItem('role');
-    setAuthState({ isLoggedIn: false, role: null });
-    window.location.href = '/';
+    try {
+      // Call logout API to clear server-side cookie
+      const { api } = await import('../lib/api');
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      // Clear client-side storage
+      window.localStorage.removeItem('token');
+      window.localStorage.removeItem('role');
+      setAuthState({ isLoggedIn: false, role: null });
+      window.location.href = '/';
+    }
   };
 
   return (

@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth';
 import Link from 'next/link';
 
 export default function StaffPage() {
+  const router = useRouter();
+  const { isLoading: authLoading } = useAuth('admin');
   const [staff, setStaff] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +25,20 @@ export default function StaffPage() {
   });
 
   useEffect(() => {
-    loadStaff();
-    loadServices();
-  }, []);
+    if (!authLoading) {
+      loadStaff();
+      loadServices();
+    }
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   const loadStaff = () => {
     authApi()

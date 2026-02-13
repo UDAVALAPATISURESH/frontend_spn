@@ -1,17 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth';
 import Link from 'next/link';
 
 export default function AdminAppointmentsPage() {
+  const router = useRouter();
+  const { isLoading: authLoading } = useAuth('admin'); // Require admin role
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    loadAppointments();
-  }, []);
+    if (!authLoading) {
+      loadAppointments();
+    }
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   const loadAppointments = () => {
     authApi()

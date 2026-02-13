@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth';
 import Link from 'next/link';
 
 export default function UsersPage() {
+  const router = useRouter();
+  const { isLoading: authLoading } = useAuth('admin');
   const [users, setUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]); // Keep original list for filtering
   const [loading, setLoading] = useState(true);
@@ -20,8 +24,19 @@ export default function UsersPage() {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (!authLoading) {
+      loadUsers();
+    }
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   const loadUsers = () => {
     authApi()

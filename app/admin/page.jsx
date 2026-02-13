@@ -1,24 +1,93 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from '../../lib/api';
 import Link from 'next/link';
 
 export default function AdminPage() {
+  const router = useRouter();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
+  // Check authentication first
   useEffect(() => {
-    authApi()
-      .get('/admin/summary')
-      .then((res) => setStats(res.data))
-      .catch((err) => {
-        console.error('Failed to load stats:', err);
-      })
-      .finally(() => setLoading(false));
+    checkAuth();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  const checkAuth = async () => {
+    try {
+      // Check if token exists
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null;
+
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // Verify token and role with backend
+      try {
+        const profileRes = await authApi().get('/users/profile');
+        const userData = profileRes.data;
+
+        if (userData.role !== 'admin') {
+          // Not admin - redirect to appropriate page
+          if (userData.role === 'staff') {
+            router.push('/staff/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
+          return;
+        }
+
+        // User is admin - proceed to load stats
+        setAuthChecked(true);
+        loadStats();
+      } catch (err) {
+        // Token invalid or expired
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          router.push('/login');
+        } else {
+          console.error('Auth check error:', err);
+          router.push('/login');
+        }
+      }
+    } catch (err) {
+      console.error('Auth check error:', err);
+      router.push('/login');
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const res = await authApi().get('/admin/summary');
+      setStats(res.data);
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        // Unauthorized or forbidden - redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        router.push('/login');
+      } else {
+        console.error('Failed to load stats:', err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!authChecked || loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   return (
     <div>

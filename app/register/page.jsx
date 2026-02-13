@@ -55,12 +55,10 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       const res = await api.post('/auth/register', form);
-      localStorage.setItem('token', res.data.token);
-      if (res.data.user?.role) {
-        localStorage.setItem('role', res.data.user.role);
-      }
-      const role = res.data.user?.role || 'customer';
-      window.location.href = role === 'admin' ? '/admin' : '/dashboard';
+      // Redirect to login page after successful registration
+      setError('');
+      alert('Registration successful! Please login to continue.');
+      window.location.href = '/login';
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

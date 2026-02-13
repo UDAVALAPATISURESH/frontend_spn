@@ -1,18 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { authApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth';
 import Link from 'next/link';
 
 export default function ReviewsPage() {
+  const router = useRouter();
+  const { isLoading: authLoading } = useAuth('admin');
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [respondingTo, setRespondingTo] = useState(null);
   const [responseText, setResponseText] = useState('');
 
   useEffect(() => {
-    loadReviews();
-  }, []);
+    if (!authLoading) {
+      loadReviews();
+    }
+  }, [authLoading]);
+
+  if (authLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '2rem' }}>
+        <h2>Loading...</h2>
+        <p>Checking authentication...</p>
+      </div>
+    );
+  }
 
   const loadReviews = () => {
     authApi()
